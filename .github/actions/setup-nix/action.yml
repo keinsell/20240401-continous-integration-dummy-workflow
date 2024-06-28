@@ -1,0 +1,14 @@
+name: 🐧 Setup Nix
+
+description: Sets up the Nix with Nix Magic Cache
+
+runs:
+  using: composite
+  steps:
+    - name: 🐧 Install Nix
+      uses: DeterminateSystems/nix-installer-action@v12
+    - name: 🐧 Run Nix Daemon
+      run: . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+      shell: bash
+    - name: 🐧 Run the Magic Nix Cache
+      uses: DeterminateSystems/magic-nix-cache-action@v7

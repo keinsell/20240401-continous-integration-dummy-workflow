@@ -1,0 +1,93 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "tasks": {
+    "format": {
+      "cache": false
+    },
+    "lint": {
+      "cache": false,
+      "outputs": []
+    },
+    "test": {
+      "inputs": [
+        "src/**/*.test.ts"
+      ],
+      "dependsOn": [
+        "^build",
+        "^db:generate"
+      ],
+      "cache": false
+    },
+    "prebuild": {
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "public/dist/**",
+        "node_modules/@prisma/client"
+      ],
+      "cache": true
+    },
+    "build": {
+      "dependsOn": [
+        "^prebuild",
+        "^build",
+        "^db:generate"
+      ],
+      "outputs": [
+        "dist/**",
+        "out/**",
+        "build/**",
+        ".next/**",
+        "public/dist/**"
+      ],
+      "cache": true
+    },
+    "start": {
+      "dependsOn": [
+        "^build"
+      ],
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "db:migrate:deploy": {
+      "outputs": [],
+      "dependsOn": [
+        "^build"
+      ],
+      "cache": false
+    },
+    "db:push": {
+      "outputs": [],
+      "cache": false
+    },
+    "db:seed": {
+      "outputs": [],
+      "cache": false
+    },
+    "db:studio": {
+      "outputs": [],
+      "cache": false
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "data:build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".cache",
+        ".metaflow",
+        "prisma/dev.db"
+      ]
+    }
+  },
+  "remoteCache": {
+    "signature": true
+  }
+}

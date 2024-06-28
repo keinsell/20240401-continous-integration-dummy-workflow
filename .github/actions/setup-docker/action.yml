@@ -1,0 +1,43 @@
+name: 🐳 Setup Docker
+
+description: Sets up the docker
+
+inputs:
+  docker_username:
+    description: 'Docker username'
+    required: false
+    default: ''
+  docker_password:
+    description: 'Docker password'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: docker/setup-qemu-action@v3
+    # Needed for self-hosted runners, but let's have this here anyway for now.
+    # https://github.com/docker/setup-buildx-action/issues/105#issuecomment-1302296660
+    - name: Set up Docker Context for Buildx
+      id: buildx-context
+      shell: sh
+      run: |
+        docker context create builders
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        config-inline: |
+          [registry."docker.io"]
+            mirrors = ["mirror.gcr.io"]
+    - name: Cache Docker layers
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+    - uses: docker/login-action@v3.2.0
+      if: inputs.docker_username != '' && inputs.docker_password != ''
+      with:
+        username: ${{ inputs.docker_username }}
+        password: ${{ inputs.docker_password }}

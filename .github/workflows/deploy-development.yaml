@@ -1,0 +1,13 @@
+on:
+  workflow_call: {}
+jobs:
+  deploy_development:
+    name: 🚀 Deploy Development
+    environment: development
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0

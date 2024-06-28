@@ -1,0 +1,188 @@
+name: 🔁 Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+      - next
+      - release/*
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+      - chore/*
+  push:
+    branches:
+      - next
+      - main
+      - release/*
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+      - chore/
+  release:
+    types:
+      - released
+      - prereleased
+
+jobs:
+  unit-testing:
+    name: "🧪 Unit Testing"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ✳️ Setup Node.js
+        uses: "./.github/actions/setup-node"
+
+      # Run all tests related to covering code,
+      # this is because we want to track coverage.
+      - name: 🧪 Unit Tests
+        run: pnpm test
+        shell: bash
+
+      - name: 📊 Code Quality Metrics
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  build:
+    name: 🔨 Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 🐧 Setup Nix
+        uses: "./.github/actions/setup-nix"
+      - name: ✳️ Setup Node.js
+        uses: "./.github/actions/setup-node"
+      - name: 🔨 Build
+        run: pnpm build
+        shell: bash
+      - name: 🐳 Setup Docker
+        uses: "./.github/actions/setup-docker"
+      - name: 🐳 Build Docker Image
+        uses: docker/bake-action@v5
+        with:
+          set: |
+            *.cache-to=type=gha,mode=max
+            *.cache-from=type=gha
+      - name: 📦 Pack Artifact
+        run: echo "Packaging artifact"
+        shell: bash
+
+  # Preview is a step where applications are deployed
+  # to a development environment meant for previewing
+  # applications before they are promoted to environments
+  # that are production or near-production.
+  preview:
+    name: 👀 Developer Preview
+    runs-on: ubuntu-latest
+    environment: development
+    needs:
+      - build
+      - unit-testing
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+  # Testing is performed in a beta environment to validate that the latest code is functioning as expected.
+  # This validation is done by first deploying the code and then running integration and end-to-end tests
+  # against the deployment. Beta environments will have dependencies on the applications and services from
+  # other teams in their gamma environments. All actions performed in this stage should be complete within
+  # 30 minutes to provide fast feedback.
+  beta-testing:
+    name: 🔬 Beta Testing
+    needs:
+      - preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 👀 Launch Environment
+        run: echo "Releasing ${{ github.ref }}"
+        shell: bash
+      - name: 👀 Deploy Database
+        run: echo "Releasing ${{ github.ref }}"
+        shell: bash
+      - name: 👀 Deploy Software
+        run: echo "Releasing ${{ github.ref }}"
+        shell: bash
+      # Run automated tests that verify if the application satisifes business requirements.
+      # These tests require the application to be running in the beta environment.
+      # Integration tests may come in the form of behavior-driven tests,
+      # automated acceptance tests, or automated tests linked to requirements
+      # and/or stories in a tracking system. Test results should be published
+      # somewhere such as AWS CodeBuild Test Reports. Examples of tools to define integration
+      # tests include but are not limited to Cucumber, vRest, and SoapUI.
+      - name: 👀 Integration Testing
+        run: echo "Releasing ${{ github.ref }}"
+        shell: bash
+      - name: 👀 Acceptance Testing
+        run: echo "Releasing ${{ github.ref }}"
+        shell: bash
+
+  gamma-testing:
+    name: 🔬 Gamma Testing
+    needs:
+      - preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 👀 Launch Environment
+        run: echo "Releasing ${{ github.ref }}"
+        shell: bash
+
+  deploy_staging:
+    name: 🚀 Deploy Staging
+    environment: staging
+    if: github.ref_type == 'tag'
+    needs:
+      - beta-testing
+      - gamma-testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+  # TODO: This should require manual approval
+  release:
+    name: 🎉 Release
+    if: github.ref_type == 'tag'
+    needs:
+      - deploy_staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: echo "Releasing ${{ github.ref }}"
+        shell: bash
+
+  deploy:
+    name: 🚀 Deploy Production
+    environment: production
+    if: github.ref_type == 'tag'
+    needs:
+      - release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0

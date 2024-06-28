@@ -1,0 +1,41 @@
+name: 💡 Code Quality
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  lint:
+    name: "💡 Lint"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 🐧 Setup Nix
+        uses: "./.github/actions/setup-nix"
+      - name: ✳️ Setup Node.js
+        uses: "./.github/actions/setup-node"
+      - name: 💡 Lint
+        run: pnpm lint
+        shell: bash
+
+  format:
+    name: "🎨 Format"
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 🐧 Setup Nix
+        uses: "./.github/actions/setup-nix"
+      - name: ✳️ Setup Node.js
+        uses: "./.github/actions/setup-node"
+      - name: 🎨 Format
+        run: pnpm format
+        shell: bash

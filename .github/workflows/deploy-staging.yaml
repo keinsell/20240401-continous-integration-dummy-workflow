@@ -1,0 +1,15 @@
+on:
+  release:
+    types:
+      - prereleased
+jobs:
+  deploy_staging:
+    name: 🚀 Deploy Staging
+    environment: staging
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📜 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0

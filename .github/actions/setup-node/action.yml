@@ -1,0 +1,48 @@
+name: ✳️ Setup Node.js
+
+description: Sets up the project, installs dependencies, and links submodules
+inputs:
+  node-version:
+    description: 'The version of Node.js to use'
+    required: true
+    default: 'latest'
+
+runs:
+  using: composite
+  steps:
+    - name: ✳️ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: 📦 Setup Package Manager
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: 🔧 Setup Biome
+      uses: biomejs/setup-biome@v2
+
+    - name: 🔧 Enable Corepack
+      run: corepack enable
+      shell: bash
+
+    - name: 🔧 Export "STORE_PATH" to the environment
+      shell: bash
+      run: |
+            echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+    - name: 🗃️ Setup Node.js Package Manager Cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.pnpm-store
+        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-
+
+    - name: 🗃️ Setup Turbo-repository Cache
+      uses: dtinth/setup-github-actions-caching-for-turbo@v1.3.0
+
+    - name: 📥 Install Node.js Dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile --prefer-offline
